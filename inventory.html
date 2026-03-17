@@ -4,59 +4,89 @@
     <meta charset="UTF-8">
     <title>فطين POS - إدارة المخزن</title>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
-        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
-        .btn-add { background: #2c3e50; color: white; padding: 10px 25px; border: none; border-radius: 4px; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: right; }
-        th { background: #fafafa; }
-        .stock-low { color: red; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .btn-add { background: #1a237e; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: right; }
+        th { background: #f8f9fa; }
+        .nav-links { text-align: center; margin-bottom: 20px; }
+        .nav-links a { text-decoration: none; color: #1a237e; font-weight: bold; margin: 0 10px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>📦 إدارة المخزون</h1>
-        <a href="index.html">🔙 العودة للكاشير</a>
+    <div class="nav-links">
+        <a href="index.html">⬅️ العودة للكاشير</a>
+        <a href="reports.html">📊 التقارير</a>
     </div>
 
     <div class="card">
-        <h3>إضافة صنف جديد</h3>
+        <h2>📦 إضافة منتج جديد للمخزن</h2>
         <div class="form-grid">
-            <input type="text" placeholder="اسم المنتج">
-            <input type="text" placeholder="الباركود">
-            <input type="number" placeholder="سعر البيع">
-            <input type="number" placeholder="الكمية المتاحة">
+            <input type="text" id="pName" placeholder="اسم المنتج (مثلاً: سكر)">
+            <input type="text" id="pBarcode" placeholder="الباركود (اسحب بالسكار أو اكتبه)">
+            <input type="number" id="pPrice" placeholder="سعر البيع">
+            <input type="number" id="pQty" placeholder="الكمية المتوفرة">
         </div>
-        <button class="btn-add">➕ حفظ المنتج</button>
-    </div>
+        <button class="btn-add" onclick="saveProduct()">➕ حفظ في المخزن</button>
 
-    <div class="card" style="margin-top: 20px;">
-        <h3>قائمة الأصناف</h3>
+        <h3>الأصناف المسجلة</h3>
         <table>
             <thead>
                 <tr>
-                    <th>كود</th>
+                    <th>باركود</th>
                     <th>الاسم</th>
                     <th>السعر</th>
                     <th>الكمية</th>
-                    <th>الحالة</th>
-                    <th>إجراءات</th>
+                    <th>إجراء</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>1001</td>
-                    <td>سكر أسوان 1ك</td>
-                    <td>35.00 ج.م</td>
-                    <td class="stock-low">5</td>
-                    <td>⚠️ منخفض</td>
-                    <td><button>تعديل</button></td>
-                </tr>
-            </tbody>
+            <tbody id="inventoryTable"></tbody>
         </table>
     </div>
+
+    <script>
+        function saveProduct() {
+            const product = {
+                name: document.getElementById('pName').value,
+                barcode: document.getElementById('pBarcode').value,
+                price: parseFloat(document.getElementById('pPrice').value),
+                qty: parseInt(document.getElementById('pQty').value)
+            };
+
+            if(!product.name || !product.barcode || !product.price) return alert("اكمل البيانات!");
+
+            let inventory = JSON.parse(localStorage.getItem('fatin_inventory')) || {};
+            inventory[product.barcode] = product;
+            localStorage.setItem('fatin_inventory', JSON.stringify(inventory));
+            
+            alert("تم الحفظ بنجاح!");
+            location.reload();
+        }
+
+        function loadInventory() {
+            const inventory = JSON.parse(localStorage.getItem('fatin_inventory')) || {};
+            const table = document.getElementById('inventoryTable');
+            for(let code in inventory) {
+                const item = inventory[code];
+                table.innerHTML += `<tr>
+                    <td>${item.barcode}</td>
+                    <td>${item.name}</td>
+                    <td>${item.price.toFixed(2)} ج.م</td>
+                    <td>${item.qty}</td>
+                    <td><button onclick="deleteItem('${code}')" style="color:red; border:none; background:none; cursor:pointer;">حذف</button></td>
+                </tr>`;
+            }
+        }
+        function deleteItem(code) {
+            let inventory = JSON.parse(localStorage.getItem('fatin_inventory'));
+            delete inventory[code];
+            localStorage.setItem('fatin_inventory', JSON.stringify(inventory));
+            location.reload();
+        }
+        loadInventory();
+    </script>
 </body>
 </html>
