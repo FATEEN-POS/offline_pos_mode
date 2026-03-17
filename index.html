@@ -2,83 +2,56 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فطين POS - نظام مبيعات أسوان الذكي</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        .container { display: flex; gap: 20px; max-width: 1200px; margin: auto; height: 90vh; }
-        
-        /* قسم المنتجات والفاتورة */
-        .billing-section { flex: 2; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
-        
-        /* قسم التحكم والعمليات */
-        .control-section { flex: 1; background: #2c3e50; color: white; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px; }
-
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #eee; padding: 10px; text-align: right; border-bottom: 2px solid #ddd; }
-        td { padding: 10px; border-bottom: 1px solid #eee; }
-
-        .btn { padding: 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        .btn-scan { background-color: #3498db; color: white; }
-        .btn-print { background-color: #27ae60; color: white; }
-        .btn-cancel { background-color: #e74c3c; color: white; }
-
-        .total-box { margin-top: auto; padding: 20px; background: #ecf0f1; border-radius: 5px; color: #2c3e50; }
-        .total-row { display: flex; justify-content: space-between; font-size: 18px; margin-bottom: 5px; }
-        .grand-total { font-size: 24px; color: #27ae60; font-weight: bold; border-top: 2px solid #bdc3c7; pt: 10px; }
-
-        .barcode-input { width: 100%; padding: 12px; border-radius: 5px; border: 1px solid #ddd; margin-bottom: 10px; box-sizing: border-box; }
+    <title>فطين POS - الكاشير</title>
+    <link rel="stylesheet" href="style.css"> <style>
+        .pos-container { display: flex; gap: 20px; padding: 20px; height: calc(100vh - 40px); }
+        .billing-panel { flex: 2; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        .action-panel { flex: 1; background: #2c3e50; border-radius: 10px; padding: 20px; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; padding: 12px; border-bottom: 2px solid #dee2e6; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        .total-section { margin-top: auto; border-top: 2px solid #eee; padding-top: 20px; }
+        .btn { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-pay { background: #27ae60; color: white; }
+        .input-barcode { width: 100%; padding: 12px; margin-bottom: 20px; border-radius: 5px; border: 1px solid #ddd; box-sizing: border-box; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="billing-section">
-        <h2>🧾 فاتورة مبيعات</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>الصنف</th>
-                    <th>الكمية</th>
-                    <th>السعر</th>
-                    <th>الإجمالي</th>
-                </tr>
-            </thead>
-            <tbody id="cart-items">
-                <tr>
-                    <td>مثال: مياه معدنية 1.5 لتر</td>
-                    <td>2</td>
-                    <td>10.00 ج.م</td>
-                    <td>20.00 ج.م</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="total-box">
-            <div class="total-row"><span>المجموع الفرعي:</span> <span>20.00 ج.م</span></div>
-            <div class="total-row"><span>ضريبة القيمة المضافة (14%):</span> <span>2.80 ج.م</span></div>
-            <div class="total-row grand-total"><span>الإجمالي النهائي:</span> <span>22.80 ج.م</span></div>
+    <div class="pos-container">
+        <div class="billing-panel">
+            <h2>🛒 فاتورة جديدة</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>الصنف</th>
+                        <th>السعر</th>
+                        <th>الكمية</th>
+                        <th>الإجمالي</th>
+                        <th>حذف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <div class="total-section">
+                <div style="display:flex; justify-content: space-between;"><span>المجموع:</span> <span>0.00 ج.م</span></div>
+                <div style="display:flex; justify-content: space-between; color: #e67e22;"><span>الضريبة (14%):</span> <span>0.00 ج.م</span></div>
+                <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: bold; color: #27ae60;"><span>الإجمالي النهائي:</span> <span>0.00 ج.م</span></div>
+            </div>
+        </div>
+        <div class="action-panel">
+            <h3>التحكم الذكي</h3>
+            <input type="text" class="input-barcode" placeholder="امسح الباركود هنا..." autofocus>
+            <button class="btn btn-pay">💳 دفع وطباعة (F10)</button>
+            <button class="btn" style="background:#3498db; color:white;">🔍 بحث عن صنف</button>
+            <button class="btn" style="background:#e74c3c; color:white;">🗑️ إلغاء الفاتورة</button>
+            <div style="margin-top: 20px; font-size: 13px; opacity: 0.8;">
+                <p>المستخدم: كاشير 1</p>
+                <p>الفرع: أسوان - المركز</p>
+                <a href="inventory.html" style="color: #3498db; text-decoration: none;">⚙️ إدارة المخزن</a> | 
+                <a href="reports.html" style="color: #3498db; text-decoration: none;">📊 التقارير</a>
+            </div>
         </div>
     </div>
-
-    <div class="control-section">
-        <h3>العمليات الذكية</h3>
-        
-        <label>مسح باركود (يدوي/قارئ):</label>
-        <input type="text" class="barcode-input" placeholder="ادخل كود المنتج هنا..." autofocus>
-
-        <button class="btn btn-scan">📸 تشغيل الكاميرا للمسح</button>
-        <button class="btn btn-print">🖨️ طباعة فاتورة (Bluetooth)</button>
-        <button class="btn btn-cancel">❌ إلغاء العملية</button>
-
-        <hr style="width: 100%; border: 0.5px solid #444;">
-        
-        <div style="font-size: 14px; color: #bdc3c7;">
-            <p>حالة النظام: متصل (Offline Mode)</p>
-            <p>مصلحة الضرائب المصرية: جاهز للربط</p>
-        </div>
-    </div>
-</div>
-
 </body>
 </html>
