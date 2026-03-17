@@ -1,0 +1,1 @@
+# offline_pos_mode
