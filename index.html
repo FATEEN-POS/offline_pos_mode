@@ -1,9 +1,9 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>فطين POS - كاميرا مطورة</title>
+    <title>فطين POS - نسخة الطباعة المستقرة</title>
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -12,55 +12,42 @@
         
         body, html { margin: 0; padding: 0; height: 100vh; width: 100vw; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; position: fixed; }
         
-        /* زيادة طول منطقة الكاميرا لـ 45% من ارتفاع الشاشة */
-        #scanner-container { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 45vh; 
-            background: #000; z-index: 5; overflow: hidden;
-        }
+        #scanner-container { position: fixed; top: 0; left: 0; width: 100%; height: 45vh; background: #000; z-index: 5; overflow: hidden; }
         #scanner-container video { width: 100%; height: 100%; object-fit: cover; }
         
-        .scanner-overlay { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-            width: 220px; height: 110px; border: 3px solid var(--accent); border-radius: 12px; 
-            box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 6; pointer-events: none; 
-        }
+        .scanner-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 220px; height: 110px; border: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 6; pointer-events: none; }
 
         .side-settings { position: absolute; top: 15px; left: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
-        .side-btn { background: rgba(255,255,255,0.85); color: #333; border: none; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .side-btn { background: rgba(255,255,255,0.85); color: #333; border: none; width: 38px; height: 38px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-        /* تعديل الواجهة السفلية لتبدأ من بعد الكاميرا مباشرة */
-        .pos-interface { 
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 55vh; 
-            background: var(--bg); border-radius: 25px 25px 0 0; padding: 15px; 
-            box-sizing: border-box; display: flex; flex-direction: column; z-index: 10; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.15);
-        }
+        .pos-interface { position: fixed; bottom: 0; left: 0; width: 100%; height: 55vh; background: var(--bg); border-radius: 25px 25px 0 0; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 10; box-shadow: 0 -5px 15px rgba(0,0,0,0.15); }
 
         .total-box { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 10px 15px; border-radius: 15px; margin-bottom: 10px; }
         .total-price { color: var(--primary); font-size: 1.5rem; font-weight: 800; }
         
         .cart-items { flex: 1; overflow-y: auto; padding-bottom: 5px; }
-        .item { background: var(--card); padding: 12px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.95rem; border: 1px solid rgba(0,0,0,0.03); }
+        .item { background: var(--card); padding: 12px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border: 1px solid rgba(0,0,0,0.03); }
         
-        .qty-ctrl { display: flex; align-items: center; gap: 10px; }
-        .qty-ctrl button { border: none; width: 30px; height: 30px; border-radius: 8px; background: #eee; font-weight: bold; font-size: 1rem; }
+        .qty-ctrl button { border: none; width: 30px; height: 30px; border-radius: 8px; background: #eee; font-weight: bold; }
 
-        .btn-print { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 15px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(42, 54, 177, 0.3); }
+        .btn-print { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 15px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
 
         #product-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; }
         .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
         .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 1.1rem; text-align: center; }
 
         #setup-screen { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .industry-card { width: 100%; max-width: 280px; padding: 18px; margin: 10px; background: var(--primary); color: white; border-radius: 15px; border: none; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+        .industry-card { width: 100%; max-width: 280px; padding: 18px; margin: 10px; background: var(--primary); color: white; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; }
 
-        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 25px; border-radius: 50px; font-size: 0.9rem; transition: 0.5s; z-index: 6000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 25px; border-radius: 50px; font-size: 0.9rem; transition: 0.5s; z-index: 6000; }
 
-        #receipt { display: none; }
+        /* --- إعدادات الطباعة القوية لمنع الصفحة البيضاء --- */
+        #receipt { display: none; width: 80mm; background: #fff; color: #000; padding: 10px; text-align: center; }
+
         @media print {
-            body * { visibility: hidden; }
-            #receipt, #receipt * { visibility: visible; }
-            #receipt { position: absolute; left: 0; top: 0; display: block !important; width: 80mm; background: white; color: black; }
+            body * { display: none !important; } /* اخفاء كل شيء */
+            #receipt, #receipt * { display: block !important; visibility: visible !important; } /* اظهار الفاتورة فقط */
+            #receipt { position: absolute; top: 0; left: 0; width: 80mm !important; margin: 0 !important; padding: 5mm !important; }
             @page { size: 80mm auto; margin: 0; }
         }
     </style>
@@ -71,7 +58,7 @@
 
     <div id="product-modal">
         <div class="modal-content">
-            <h3 style="margin:0 0 15px 0;">صنف جديد 🛍️</h3>
+            <h3>صنف جديد 🛍️</h3>
             <input type="text" id="new-name" placeholder="اسم المنتج">
             <input type="text" inputmode="decimal" id="new-price" placeholder="السعر">
             <button class="industry-card" style="width:100%; margin:10px 0 0 0;" onclick="saveNewProduct()">حفظ وإضافة</button>
@@ -79,16 +66,15 @@
     </div>
 
     <div id="setup-screen">
-        <h2 style="color:var(--primary); margin-bottom:5px;">فطين POS PRO</h2>
-        <p style="opacity:0.7; margin-bottom:20px;">اختر نوع النشاط للتحميل أوفلاين</p>
+        <h2 style="color:var(--primary)">فطين POS PRO</h2>
         <button class="industry-card" onclick="initSystem('supermarket')">🛒 سوبر ماركت</button>
         <button class="industry-card" onclick="initSystem('pharmacy')">💊 صيدلية</button>
     </div>
 
     <div id="scanner-container">
         <div class="side-settings">
-            <button class="side-btn" onclick="toggleTheme()" title="تغيير الثيم"><i class="fas fa-adjust"></i></button>
-            <button class="side-btn" onclick="setStoreName()" title="اسم المحل"><i class="fas fa-store"></i></button>
+            <button class="side-btn" onclick="toggleTheme()"><i class="fas fa-adjust"></i></button>
+            <button class="side-btn" onclick="setStoreName()"><i class="fas fa-store"></i></button>
         </div>
         <div class="scanner-overlay"></div>
     </div>
@@ -97,18 +83,11 @@
         <div class="total-box">
             <div>
                 <div id="s-name-display" style="font-size: 0.8rem; color: var(--primary); font-weight: bold;">متجر فطين</div>
-                <div style="font-size: 1rem; font-weight: bold;">الإجمالي المستحق</div>
+                <div style="font-weight: bold;">الإجمالي</div>
             </div>
-            <div class="total-price"><span id="total-val">0.00</span> <small style="font-size: 0.9rem;">ج.م</small></div>
+            <div class="total-price"><span id="total-val">0.00</span> <small>ج.م</small></div>
         </div>
-        
-        <div id="cart" class="cart-items">
-            <div style="text-align:center; margin-top:50px; opacity:0.3;">
-                <i class="fas fa-barcode" style="font-size: 3rem;"></i>
-                <p>امسح باركود لبدء البيع</p>
-            </div>
-        </div>
-        
+        <div id="cart" class="cart-items"></div>
         <button class="btn-print" onclick="askPrintCount()">🖨️ طباعة الفاتورة</button>
     </div>
 
@@ -117,7 +96,6 @@
     <script>
         let currentDB = {}, cart = {}, currentScanCode = "";
 
-        // دالة تحويل الأرقام العربية إلى إنجليزية لضمان الحسابات
         const parseArabic = (str) => {
             if(!str) return 0;
             return parseFloat(str.toString().replace(/[٠١٢٣٤٥٦٧٨٩]/g, d => d.charCodeAt(0) - 1632));
@@ -131,13 +109,12 @@
                 startScanner();
             }
             if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
-            showToast("🚀 سيستم فطين جاهز للعمل");
         };
 
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg; t.style.bottom = "20px";
-            setTimeout(() => t.style.bottom = "-100px", 3000);
+            setTimeout(() => t.style.bottom = "-100px", 2500);
         }
 
         function toggleTheme() {
@@ -147,7 +124,7 @@
         }
 
         function setStoreName() {
-            const n = prompt("ادخل اسم المحل:");
+            const n = prompt("اسم المحل:");
             if(n) { localStorage.setItem('store_name', n); document.getElementById('s-name-display').innerText = n; }
         }
 
@@ -162,43 +139,33 @@
             Quagga.init({
                 inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#scanner-container'), constraints: { facingMode: "environment" } },
                 decoder: { readers: ["ean_reader", "code_128_reader", "ean_8_reader"] }
-            }, (err) => { 
-                if (!err) Quagga.start(); 
-                else { showToast("❌ فشل تشغيل الكاميرا"); console.error(err); }
-            });
+            }, (err) => { if (!err) Quagga.start(); });
 
             Quagga.onDetected((res) => {
                 const code = res.codeResult.code;
                 if (!window.busy && code) {
                     window.busy = true; handleScan(code);
-                    setTimeout(() => window.busy = false, 2000); // مهلة بين كل سكان
+                    setTimeout(() => window.busy = false, 2000);
                 }
             });
         }
 
         function handleScan(code) {
             currentScanCode = code;
-            if (currentDB[code]) { 
-                addToCart(code); 
-                showToast("✅ تم إضافة: " + currentDB[code].name); 
-            } else { 
-                document.getElementById('product-modal').style.display = 'flex'; 
-                document.getElementById('new-name').focus(); 
-            }
+            if (currentDB[code]) { addToCart(code); showToast("✅ " + currentDB[code].name); }
+            else { document.getElementById('product-modal').style.display = 'flex'; document.getElementById('new-name').focus(); }
         }
 
         function saveNewProduct() {
             const name = document.getElementById('new-name').value;
-            let pInput = document.getElementById('new-price').value;
-            let price = parseArabic(pInput);
-
+            let price = parseArabic(document.getElementById('new-price').value);
             if (name && !isNaN(price)) {
                 currentDB[currentScanCode] = { name, price: price };
                 localStorage.setItem('fatin_db', JSON.stringify(currentDB));
                 addToCart(currentScanCode);
                 document.getElementById('product-modal').style.display = 'none';
                 document.getElementById('new-name').value = ""; document.getElementById('new-price').value = "";
-            } else { alert("برجاء إدخال بيانات صحيحة"); }
+            }
         }
 
         function addToCart(code) {
@@ -218,11 +185,7 @@
                     let i = cart[id]; total += i.price * i.qty;
                     container.innerHTML += `<div class="item">
                         <div><b>${i.name}</b><br><small>${i.price.toFixed(2)} ج.م</small></div>
-                        <div class="qty-ctrl">
-                            <button onclick="changeQty('${id}',-1)">-</button>
-                            <b>${i.qty}</b>
-                            <button onclick="changeQty('${id}',1)">+</button>
-                        </div>
+                        <div class="qty-ctrl"><button onclick="changeQty('${id}',-1)">-</button> <b>${i.qty}</b> <button onclick="changeQty('${id}',1)">+</button></div>
                     </div>`;
                 });
             }
@@ -232,7 +195,7 @@
         function changeQty(id, d) { cart[id].qty += d; if(cart[id].qty <= 0) delete cart[id]; updateUI(); }
 
         function askPrintCount() {
-            if (Object.keys(cart).length === 0) { showToast("⚠️ السلة فارغة"); return; }
+            if (Object.keys(cart).length === 0) return;
             let countInput = prompt("عدد النسخ المطلوب طباعتها؟", "1");
             let count = Math.floor(parseArabic(countInput || "1"));
             if (count > 0) printInvoice(count);
@@ -244,38 +207,32 @@
             let rows = "";
             for (let id in cart) {
                 let i = cart[id]; total += i.price * i.qty;
-                rows += `<div style="display:flex; justify-content:space-between; font-size: 12px; margin-bottom: 3px;">
-                            <span>${i.name} (${i.qty})</span>
-                            <span>${(i.price * i.qty).toFixed(2)}</span>
-                         </div>`;
+                rows += `<div style="display:flex; justify-content:space-between; margin-bottom: 5px;"><span>${i.name} (x${i.qty})</span><span>${(i.price*i.qty).toFixed(2)}</span></div>`;
             }
 
-            let singleReceipt = `
-                <div style="width: 80mm; text-align:center; padding: 10px; box-sizing: border-box; page-break-after: always;">
+            let single = `
+                <div style="direction:rtl; text-align:center; font-family:sans-serif; margin-bottom: 30px;">
                     <h2 style="margin:0;">${store}</h2>
-                    <p style="font-size: 11px; margin:5px 0;">${new Date().toLocaleString('ar-EG')}</p>
-                    <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
+                    <p style="font-size:12px;">${new Date().toLocaleString('ar-EG')}</p>
+                    <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
                     ${rows}
-                    <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:15px;">
-                        <span>الإجمالي:</span>
-                        <span>${total.toFixed(2)} ج.م</span>
-                    </div>
-                    <div style="border-top: 1px dashed black; margin: 10px 0;"></div>
-                    <p style="font-size: 11px;">شركة فطين للأنظمة الذكية 🚀</p>
-                    <div style="height: 40px;"></div>
+                    <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:16px;"><span>الإجمالي:</span><span>${total.toFixed(2)} ج.م</span></div>
+                    <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+                    <p style="font-size:12px;">شركة فطين - شكراً لكم</p>
                 </div>`;
 
             let finalHtml = "";
-            for(let k=0; k < copies; k++) {
-                finalHtml += singleReceipt;
-                if(k < copies - 1) finalHtml += `<div style="border-top: 2px dotted #000; margin: 20px 0;"></div>`;
-            }
-            
+            for(let k=0; k < copies; k++) finalHtml += single;
+
             document.getElementById('receipt').innerHTML = finalHtml;
+            
+            // التأكيد على ظهور العنصر قبل الطباعة
+            document.getElementById('receipt').style.display = 'block';
             window.print();
+            document.getElementById('receipt').style.display = 'none';
+            
             cart = {}; updateUI();
-            showToast("🧾 تمت الطباعة بنجاح");
         }
     </script>
 </body>
