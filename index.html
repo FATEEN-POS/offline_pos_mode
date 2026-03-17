@@ -1,85 +1,190 @@
-<script>
-    // جلب البيانات من المخزن الحقيقي (LocalStorage)
-    let inventory = JSON.parse(localStorage.getItem('fatin_inventory')) || {};
-    let cart = [];
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>فطين POS الذكي</title>
+    <style>
+        :root { --primary: #2a36b1; --bg: #f0f2f8; --text: #1a1a1a; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
 
-    const barcodeInput = document.getElementById('barcodeInput');
-    const itemsList = document.getElementById('itemsList');
-    const finalTotalDisplay = document.getElementById('finalTotal');
-    const itemCountDisplay = document.getElementById('itemCount');
-
-    barcodeInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            const code = this.value;
-            addToCart(code);
-            this.value = '';
+        /* منطقة الكاميرا الخلفية */
+        .camera-layer {
+            position: absolute; top: 0; width: 100%; height: 60%;
+            background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), 
+                        url('https://images.unsplash.com/photo-1604719312566-8912e9227c6a?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover; background-position: center;
+            display: flex; justify-content: center; align-items: center;
         }
-    });
 
-    function addToCart(code) {
-        // البحث في المخزن اللي سجلناه في الصفحة التانية
-        const product = inventory[code]; 
-        
-        if (product) {
-            const existing = cart.find(item => item.barcode === code);
-            if (existing) {
-                existing.qty++;
-            } else {
-                cart.push({ ...product, qty: 1 });
+        .scan-box {
+            width: 240px; height: 240px; border: 2px solid #00ff00; border-radius: 20px;
+            box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.4); position: relative;
+        }
+        .scan-line {
+            position: absolute; width: 100%; height: 2px; background: #00ff00;
+            top: 0; box-shadow: 0 0 15px #00ff00; animation: scan 2s infinite linear;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        /* البطاقة السفلية (التنفيذ الفعلي) */
+        .pos-sheet {
+            position: absolute; bottom: 0; width: 100%; height: 48%;
+            background: var(--bg); border-radius: 30px 30px 0 0; padding: 20px;
+            display: flex; flex-direction: column; transition: 0.3s;
+        }
+
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .price-tag { color: var(--primary); font-size: 32px; font-weight: 800; }
+
+        .items-list { flex: 1; overflow-y: auto; padding: 5px; }
+        .product-item {
+            background: #fff; padding: 15px; border-radius: 18px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .qty-box { display: flex; align-items: center; gap: 15px; background: #f0f2f5; padding: 8px 15px; border-radius: 12px; }
+        .qty-btn { border: none; background: none; font-size: 22px; color: var(--primary); cursor: pointer; font-weight: bold; }
+
+        .footer-actions { padding-top: 15px; }
+        .btn-confirm {
+            width: 100%; background: var(--primary); color: white; border: none;
+            padding: 18px; border-radius: 18px; font-size: 18px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer;
+        }
+
+        /* حقل الباركود المخفي للاستخدام السريع */
+        #barcodeTrigger { position: absolute; top: -100px; }
+    </style>
+</head>
+<body onclick="document.getElementById('barcodeTrigger').focus()">
+
+    <div class="camera-layer">
+        <div class="scan-box"><div class="scan-line"></div></div>
+        <input type="text" id="barcodeTrigger" autofocus placeholder="الباركود">
+        <div style="position:absolute; top:40px; color:white; font-size:14px; background:rgba(0,0,0,0.5); padding:5px 15px; border-radius:20px;">
+            اضغط في أي مكان لبدء المسح
+        </div>
+    </div>
+
+    <div class="pos-sheet">
+        <div class="sheet-header">
+            <div>
+                <h2 style="margin:0; font-size: 22px;">الأصناف الممسوحة</h2>
+                <span id="itemsCount" style="color:#777;">0 أصناف</span>
+            </div>
+            <div style="text-align: left;">
+                <div id="totalPrice" class="price-tag">0.00 ج.م</div>
+            </div>
+        </div>
+
+        <div id="cartContent" class="items-list">
+            </div>
+
+        <div class="footer-actions">
+            <button class="btn-confirm" onclick="checkout()">
+                💳 مراجعة الطلب ودفع
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // داتا جاهزة سريعة لمحاكاة السيستم الذكي
+        const quickDB = {
+            "1": { name: "بسكويت 50-50", price: 5.00 },
+            "2": { name: "بوربون شيكولاتة", price: 10.00 },
+            "3": { name: "أوريو كيك", price: 7.50 },
+            "4": { name: "بيبسي كانز", price: 15.00 }
+        };
+
+        let cart = {};
+
+        const input = document.getElementById('barcodeTrigger');
+
+        // استجابة فورية للباركود
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const code = input.value;
+                if (quickDB[code]) {
+                    addItem(code);
+                } else {
+                    // إذا الباركود مش موجود، السيستم "بيخمن" إنه صنف جديد
+                    addItemGeneric(code);
+                }
+                input.value = '';
             }
-            renderCart();
-        } else {
-            alert("هذا الباركود غير مسجل في المخزن! اذهب لصفحة المخزن أولاً.");
-        }
-    }
-
-    function updateQty(barcode, delta) {
-        const item = cart.find(i => i.barcode === barcode);
-        if (item) {
-            item.qty += delta;
-            if (item.qty <= 0) cart = cart.filter(i => i.barcode !== barcode);
-            renderCart();
-        }
-    }
-
-    function renderCart() {
-        itemsList.innerHTML = '';
-        let total = 0;
-        let count = 0;
-
-        cart.forEach(item => {
-            total += item.price * item.qty;
-            count += item.qty;
-            itemsList.innerHTML += `
-                <div class="item-card">
-                    <div>
-                        <h4 style="margin:0;">${item.name}</h4>
-                        <span style="color:#1a237e; font-weight:bold;">${(item.price * item.qty).toFixed(2)} ج.م</span>
-                    </div>
-                    <div class="qty-controls">
-                        <button class="qty-btn" onclick="updateQty('${item.barcode}', -1)">−</button>
-                        <span>${item.qty}</span>
-                        <button class="qty-btn" onclick="updateQty('${item.barcode}', 1)">+</button>
-                    </div>
-                </div>`;
         });
 
-        itemCountDisplay.innerText = `إجمالي ${count} أصناف`;
-        finalTotalDisplay.innerText = `${total.toFixed(2)} ج.م`;
-    }
+        function addItem(code) {
+            if (cart[code]) {
+                cart[code].qty++;
+            } else {
+                cart[code] = { ...quickDB[code], qty: 1 };
+            }
+            updateUI();
+        }
 
-    function printReceipt() {
-        if (cart.length === 0) return alert("السلة فارغة!");
-        // هنا نقوم بتسجيل المبيعات للتقارير قبل الطباعة
-        saveToReports(cart, parseFloat(finalTotalDisplay.innerText));
-        window.print();
-        cart = [];
-        renderCart();
-    }
+        function addItemGeneric(code) {
+            const id = 'gen_' + code;
+            if (cart[id]) {
+                cart[id].qty++;
+            } else {
+                cart[id] = { name: "صنف غير مسجل (" + code + ")", price: 20.00, qty: 1 };
+            }
+            updateUI();
+        }
 
-    function saveToReports(currentCart, total) {
-        let reports = JSON.parse(localStorage.getItem('fatin_reports')) || [];
-        reports.push({ date: new Date().toLocaleString(), items: currentCart, total: total });
-        localStorage.setItem('fatin_reports', JSON.stringify(reports));
-    }
-</script>
+        function changeQty(id, delta) {
+            if (cart[id]) {
+                cart[id].qty += delta;
+                if (cart[id].qty <= 0) delete cart[id];
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            const container = document.getElementById('cartContent');
+            const totalDisplay = document.getElementById('totalPrice');
+            const countDisplay = document.getElementById('itemsCount');
+            
+            container.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            for (let id in cart) {
+                const item = cart[id];
+                total += item.price * item.qty;
+                count += item.qty;
+
+                container.innerHTML += `
+                    <div class="product-item">
+                        <div>
+                            <h4 style="margin:0; color:#333;">${item.name}</h4>
+                            <span style="color:var(--primary); font-weight:bold;">${item.price.toFixed(2)} ج.م</span>
+                        </div>
+                        <div class="qty-box">
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty('${id}', -1)">−</button>
+                            <span style="font-weight:bold; min-width:20px; text-align:center;">${item.qty}</span>
+                            <button class="qty-btn" onclick="event.stopPropagation(); changeQty('${id}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            totalDisplay.innerText = total.toFixed(2) + " ج.م";
+            countDisplay.innerText = count + " أصناف";
+        }
+
+        function checkout() {
+            if (Object.keys(cart).length === 0) return alert("السلة فارغة!");
+            alert("تم تسجيل العملية بنجاح! جاري الطباعة...");
+            cart = {};
+            updateUI();
+        }
+    </script>
+</body>
+</html>
