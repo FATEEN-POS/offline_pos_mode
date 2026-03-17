@@ -1,200 +1,216 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <base href="/">
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="نظام فطين للمبيعات الذكي - أسوان">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>فطين POS - النظام الشامل</title>
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+    <style>
+        :root { --primary: #2a36b1; --bg: #f8f9ff; --accent: #00ff00; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
+        
+        /* شاشة البداية (اختيار النشاط) */
+        #setup-screen { position: fixed; inset: 0; background: #fff; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .industry-card { width: 100%; max-width: 300px; padding: 20px; margin: 10px; border: 2px solid #eee; border-radius: 15px; cursor: pointer; transition: 0.3s; }
+        .industry-card:hover { border-color: var(--primary); background: #f0f2ff; }
 
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Fatin POS">
-  
-  <title>فطين POS - الماسح والطباعة</title>
+        /* منطقة الكاميرا */
+        #scanner-container { position: absolute; top: 0; width: 100%; height: 45%; background: #000; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .overlay { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 260px; height: 160px; border: 3px solid var(--accent); border-radius: 15px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.6); z-index: 10; pointer-events: none; }
 
-  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+        /* واجهة السلة */
+        .pos-interface { position: absolute; bottom: 0; width: 100%; height: 58%; background: var(--bg); border-radius: 30px 30px 0 0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 20; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .total-price { color: var(--primary); font-size: 32px; font-weight: 900; }
+        
+        .cart-items { flex: 1; overflow-y: auto; margin-bottom: 10px; }
+        .item { background: #fff; padding: 12px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .item-info b { display: block; font-size: 16px; }
+        .item-qty { background: #eee; padding: 5px 12px; border-radius: 10px; display: flex; gap: 10px; align-items: center; }
+        
+        .btn-print { width: 100%; background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 20px; font-size: 18px; font-weight: bold; cursor: pointer; }
 
-  <style>
-    :root { --primary: #2a36b1; --bg: #f8f9ff; }
-    body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background: #000; overflow: hidden; }
-
-    /* منطقة الكاميرا (الفيديو) */
-    #interactive.viewport { position: absolute; top: 0; width: 100%; height: 50%; background: #000; }
-    #interactive.viewport video { width: 100%; height: 100%; object-fit: cover; }
-    
-    .scan-overlay {
-      position: absolute; top: 0; width: 100%; height: 50%;
-      display: flex; justify-content: center; align-items: center; pointer-events: none;
-    }
-    .scan-frame {
-      width: 260px; height: 160px; border: 3px solid #00ff00; border-radius: 15px;
-      box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.6); z-index: 10;
-    }
-
-    /* الواجهة السفلية المستوحاة من Flutter */
-    .pos-sheet {
-      position: absolute; bottom: 0; width: 100%; height: 53%;
-      background: var(--bg); border-radius: 30px 30px 0 0; padding: 20px;
-      display: flex; flex-direction: column; z-index: 20; box-shadow: 0 -5px 25px rgba(0,0,0,0.4);
-    }
-
-    .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ddd; }
-    .price-tag { color: var(--primary); font-size: 32px; font-weight: 900; }
-
-    .items-list { flex: 1; overflow-y: auto; padding-top: 5px; }
-    .product-item {
-      background: #fff; padding: 15px; border-radius: 18px;
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    }
-
-    .qty-controls { display: flex; align-items: center; gap: 15px; background: #f0f2f5; padding: 6px 15px; border-radius: 12px; }
-    .qty-btn { border: none; background: none; font-size: 22px; color: var(--primary); cursor: pointer; font-weight: bold; }
-
-    .btn-main {
-      width: 100%; background: var(--primary); color: white; border: none;
-      padding: 18px; border-radius: 20px; font-size: 18px; font-weight: bold; cursor: pointer;
-      box-shadow: 0 4px 15px rgba(42, 54, 177, 0.3);
-    }
-
-    /* تنسيق الفاتورة للطباعة */
-    #receipt-print { display: none; padding: 20px; font-family: 'Courier New', monospace; direction: rtl; }
-    @media print {
-      body * { visibility: hidden; }
-      #receipt-print, #receipt-print * { visibility: visible; }
-      #receipt-print { position: absolute; left: 0; top: 0; width: 100%; display: block !important; }
-      table { width: 100%; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin: 10px 0; }
-    }
-  </style>
+        /* منطقة الطباعة */
+        #receipt { display: none; padding: 20px; font-family: monospace; width: 80mm; background: #fff; direction: rtl; }
+        @media print {
+            body * { visibility: hidden; }
+            #receipt, #receipt * { visibility: visible; }
+            #receipt { position: absolute; left: 0; top: 0; display: block !important; width: 100%; }
+        }
+    </style>
 </head>
 <body>
 
-  <div id="interactive" class="viewport"></div>
-  <div class="scan-overlay"><div class="scan-frame"></div></div>
-
-  <div class="pos-sheet">
-    <div class="sheet-header">
-      <div>
-        <h2 style="margin:0; font-size: 20px;">سلة المشتريات</h2>
-        <span id="status-text" style="color:#27ae60; font-size: 13px;">الماسح جاهز..</span>
-      </div>
-      <div id="totalDisplay" class="price-tag">0.00 ج.م</div>
+    <div id="setup-screen">
+        <h1 style="color:var(--primary)">فطين POS</h1>
+        <p>اختر نوع النشاط لتحميل المنتجات أوفلاين</p>
+        <div class="industry-card" onclick="initSystem('supermarket')">🛒 سوبر ماركت</div>
+        <div class="industry-card" onclick="initSystem('pharmacy')">💊 صيدلية</div>
+        <div id="loading-msg" style="display:none; color: blue;">جاري تحميل آلاف المنتجات...</div>
     </div>
 
-    <div id="cartItems" class="items-list">
-      </div>
+    <div id="scanner-container">
+        <div class="overlay"></div>
+    </div>
 
-    <button class="btn-main" onclick="printInvoice()">🖨️ طباعة الفاتورة الآن</button>
-  </div>
-
-  <div id="receipt-print"></div>
-
-  <script>
-    // 1. قاعدة بيانات محلية (تُحفظ في المتصفح)
-    let db = JSON.parse(localStorage.getItem('pos_db')) || {
-        "6221007011447": { name: "بسكويت لوتس مصري", price: 10.00 },
-        "6223000181111": { name: "مياه معدنية 1.5ل", price: 8.50 }
-    };
-
-    let cart = {};
-
-    // 2. تشغيل الكاميرا (Quagga)
-    Quagga.init({
-      inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#interactive'), constraints: { facingMode: "environment" } },
-      decoder: { readers: ["ean_reader", "code_128_reader", "ean_8_reader"] }
-    }, (err) => { if (!err) Quagga.start(); });
-
-    Quagga.onDetected((result) => {
-      const code = result.codeResult.code;
-      if (code && !window.isScanning) {
-        window.isScanning = true;
-        handleScan(code);
-        setTimeout(() => { window.isScanning = false; }, 2000);
-      }
-    });
-
-    function handleScan(code) {
-      let product = db[code];
-      if (!product) {
-        beep(300); // صوت تنبيه مختلف للمنتج الجديد
-        const name = prompt("منتج جديد! أدخل اسم الصنف:", "صنف غير مسجل");
-        const price = prompt("أدخل سعر البيع (ج.م):", "0.00");
-        if (name && price) {
-          product = { name: name, price: parseFloat(price) };
-          db[code] = product;
-          localStorage.setItem('pos_db', JSON.stringify(db));
-        } else return;
-      }
-      
-      if (cart[code]) cart[code].qty++;
-      else cart[code] = { ...product, qty: 1 };
-      
-      beep(100);
-      updateUI();
-    }
-
-    function updateUI() {
-      const list = document.getElementById('cartItems');
-      const totalText = document.getElementById('totalDisplay');
-      list.innerHTML = '';
-      let total = 0;
-
-      for (let id in cart) {
-        let item = cart[id];
-        total += item.price * item.qty;
-        list.innerHTML += `
-          <div class="product-item">
-            <div><b>${item.name}</b><br><small>${item.price.toFixed(2)} ج.م</small></div>
-            <div class="qty-controls">
-              <button class="qty-btn" onclick="changeQty('${id}', -1)">-</button>
-              <span>${item.qty}</span>
-              <button class="qty-btn" onclick="changeQty('${id}', 1)">+</button>
+    <div class="pos-interface">
+        <div class="header">
+            <div>
+                <h2 style="margin:0; font-size: 18px;">السلة الحالية</h2>
+                <small id="status" style="color: green;">الماسح نشط ✅</small>
             </div>
-          </div>`;
-      }
-      totalText.innerText = total.toFixed(2) + " ج.م";
-    }
+            <div id="total-val" class="total-price">0.00 ج.م</div>
+        </div>
 
-    function changeQty(id, delta) {
-      cart[id].qty += delta;
-      if (cart[id].qty <= 0) delete cart[id];
-      updateUI();
-    }
+        <div id="cart" class="cart-items"></div>
 
-    function printInvoice() {
-      if (Object.keys(cart).length === 0) return alert("السلة فارغة");
-      const now = new Date();
-      let html = `
-        <div style="text-align:center">
-          <h2>فاتورة مبيعات - فطين POS</h2>
-          <p>التاريخ: ${now.toLocaleDateString('ar-EG')} | الوقت: ${now.toLocaleTimeString('ar-EG')}</p>
-          <hr>
-          <table style="width:100%; text-align:right;">
-            <tr><th>الصنف</th><th>سعر</th><th>كمية</th><th>إجمالي</th></tr>`;
-      
-      let grandTotal = 0;
-      for (let id in cart) {
-        let item = cart[id];
-        let sub = item.price * item.qty;
-        grandTotal += sub;
-        html += `<tr><td>${item.name}</td><td>${item.price}</td><td>${item.qty}</td><td>${sub.toFixed(2)}</td></tr>`;
-      }
-      
-      html += `</table><hr><h3 style="text-align:left">الإجمالي: ${grandTotal.toFixed(2)} ج.م</h3><p style="text-align:center">شكراً لزيارتكم</p></div>`;
-      
-      const printDiv = document.getElementById('receipt-print');
-      printDiv.innerHTML = html;
-      window.print();
-      if(confirm("بدء فاتورة جديدة؟")) { cart = {}; updateUI(); }
-    }
+        <button class="btn-print" onclick="printInvoice()">🖨️ طباعة الفاتورة (الوقت تلقائي)</button>
+    </div>
 
-    function beep(duration) {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      osc.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + (duration/1000));
-    }
-  </script>
+    <div id="receipt"></div>
+
+    <script>
+        // قاعدة بيانات ضخمة (محاكاة لما يتم سحبه أوفلاين)
+        const industryDatabases = {
+            supermarket: {
+                "6221007011447": { name: "بسكويت شاي لوتس", price: 10.00 },
+                "6223000181111": { name: "مياه نسله 1.5 لتر", price: 8.50 },
+                "6221031261115": { name: "لتر جهينة كامل الدسم", price: 45.00 },
+                "6224000000123": { name: "شيبسي عائلي ملح", price: 15.00 },
+                "01234567": { name: "بيبسي كانز 330 مل", price: 12.00 }
+            },
+            pharmacy: {
+                "0000001": { name: "بندول اكسترا", price: 35.00 },
+                "0000002": { name: "كونجستال أقراص", price: 20.00 }
+            }
+        };
+
+        let currentDB = {};
+        let cart = {};
+
+        // تشغيل النظام
+        function initSystem(type) {
+            document.getElementById('loading-msg').style.display = 'block';
+            
+            // تخزين نوع النشاط في ذاكرة المتصفح للأبد (Offline Cache)
+            localStorage.setItem('fatin_setup', 'done');
+            localStorage.setItem('fatin_type', type);
+            
+            // تحميل الداتا
+            currentDB = industryDatabases[type];
+            localStorage.setItem('fatin_db', JSON.stringify(currentDB));
+
+            document.getElementById('setup-screen').style.display = 'none';
+            startScanner();
+        }
+
+        // فحص إذا كان المستخدم مسجل مسبقاً
+        if(localStorage.getItem('fatin_setup') === 'done') {
+            currentDB = JSON.parse(localStorage.getItem('fatin_db'));
+            document.getElementById('setup-screen').style.display = 'none';
+            startScanner();
+        }
+
+        function startScanner() {
+            Quagga.init({
+                inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#scanner-container'), constraints: { facingMode: "environment" } },
+                decoder: { readers: ["ean_reader", "code_128_reader", "ean_8_reader"] }
+            }, (err) => { if (!err) Quagga.start(); });
+
+            Quagga.onDetected((result) => {
+                const code = result.codeResult.code;
+                if (code && !window.isScanning) {
+                    window.isScanning = true;
+                    handleScan(code);
+                    setTimeout(() => { window.isScanning = false; }, 2000);
+                }
+            });
+        }
+
+        function handleScan(code) {
+            let product = currentDB[code];
+            
+            if (!product) {
+                beep(400);
+                const name = prompt("صنف جديد! ادخل الاسم:", "منتج غير مسجل");
+                const price = prompt("ادخل السعر:", "0.00");
+                if (name && price) {
+                    product = { name, price: parseFloat(price) };
+                    currentDB[code] = product;
+                    localStorage.setItem('fatin_db', JSON.stringify(currentDB));
+                } else return;
+            }
+
+            if (cart[code]) cart[code].qty++;
+            else cart[code] = { ...product, qty: 1 };
+            
+            beep(100);
+            updateUI();
+        }
+
+        function updateUI() {
+            const container = document.getElementById('cart');
+            container.innerHTML = '';
+            let total = 0;
+            for (let id in cart) {
+                let item = cart[id];
+                total += item.price * item.qty;
+                container.innerHTML += `
+                    <div class="item">
+                        <div class="item-info"><b>${item.name}</b><small>${item.price.toFixed(2)} ج.م</small></div>
+                        <div class="item-qty">
+                            <span onclick="changeQty('${id}', -1)" style="cursor:pointer">➖</span>
+                            <b>${item.qty}</b>
+                            <span onclick="changeQty('${id}', 1)" style="cursor:pointer">➕</span>
+                        </div>
+                    </div>`;
+            }
+            document.getElementById('total-val').innerText = total.toFixed(2) + " ج.م";
+        }
+
+        function changeQty(id, delta) {
+            cart[id].qty += delta;
+            if (cart[id].qty <= 0) delete cart[id];
+            updateUI();
+        }
+
+        function printInvoice() {
+            if (Object.keys(cart).length === 0) return alert("السلة فارغة");
+            const now = new Date();
+            let html = `
+                <div style="text-align:center; border-bottom: 1px dashed #000; padding-bottom: 10px;">
+                    <h2 style="margin:0">فاتورة مبيعات فطين</h2>
+                    <p>${now.toLocaleDateString('ar-EG')} - ${now.toLocaleTimeString('ar-EG')}</p>
+                </div>
+                <table style="width:100%; margin-top:10px; border-collapse: collapse;">
+                    <tr><th style="text-align:right">الصنف</th><th>كمية</th><th>إجمالي</th></tr>`;
+            
+            let grandTotal = 0;
+            for (let id in cart) {
+                let item = cart[id];
+                let sub = item.price * item.qty;
+                grandTotal += sub;
+                html += `<tr><td>${item.name}</td><td style="text-align:center">${item.qty}</td><td style="text-align:left">${sub.toFixed(2)}</td></tr>`;
+            }
+            
+            html += `</table>
+                <div style="border-top: 1px dashed #000; margin-top:10px; padding-top:10px; font-weight:bold; font-size: 18px;">
+                    الإجمالي: ${grandTotal.toFixed(2)} ج.م
+                </div>
+                <p style="text-align:center; margin-top:20px;">شكراً لزيارتكم</p>`;
+
+            document.getElementById('receipt').innerHTML = html;
+            window.print();
+            if(confirm("بدء فاتورة جديدة؟")) { cart = {}; updateUI(); }
+        }
+
+        function beep(d) {
+            const a = new AudioContext();
+            const o = a.createOscillator();
+            o.connect(a.destination);
+            o.start(); o.stop(a.currentTime + (d/1000));
+        }
+    </script>
 </body>
 </html>
