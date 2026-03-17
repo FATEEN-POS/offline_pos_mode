@@ -1,1 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>فطين POS - إدارة المخزن</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+        input, select { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn-add { background: #2c3e50; color: white; padding: 10px 25px; border: none; border-radius: 4px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: right; }
+        th { background: #fafafa; }
+        .stock-low { color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📦 إدارة المخزون</h1>
+        <a href="index.html">🔙 العودة للكاشير</a>
+    </div>
 
+    <div class="card">
+        <h3>إضافة صنف جديد</h3>
+        <div class="form-grid">
+            <input type="text" placeholder="اسم المنتج">
+            <input type="text" placeholder="الباركود">
+            <input type="number" placeholder="سعر البيع">
+            <input type="number" placeholder="الكمية المتاحة">
+        </div>
+        <button class="btn-add">➕ حفظ المنتج</button>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>قائمة الأصناف</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>كود</th>
+                    <th>الاسم</th>
+                    <th>السعر</th>
+                    <th>الكمية</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1001</td>
+                    <td>سكر أسوان 1ك</td>
+                    <td>35.00 ج.م</td>
+                    <td class="stock-low">5</td>
+                    <td>⚠️ منخفض</td>
+                    <td><button>تعديل</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
