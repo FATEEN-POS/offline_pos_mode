@@ -1,181 +1,38 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>فطين POS - نظام أسوان الذكي</title>
-    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-    <style>
-        :root { --primary: #2a36b1; --bg: #f8f9ff; }
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background: #000; overflow: hidden; }
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
 
-        /* منطقة الكاميرا */
-        #interactive.viewport { position: absolute; top: 0; width: 100%; height: 50%; background: #000; }
-        #interactive.viewport video { width: 100%; height: 100%; object-fit: cover; }
-        .scan-frame { position: absolute; top: 25%; left: 50%; transform: translate(-50%, -50%); width: 260px; height: 160px; border: 3px solid #00ff00; border-radius: 15px; box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.6); z-index: 10; pointer-events: none; }
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
 
-        /* الواجهة السفلية */
-        .pos-sheet { position: absolute; bottom: 0; width: 100%; height: 53%; background: var(--bg); border-radius: 30px 30px 0 0; padding: 20px; display: flex; flex-direction: column; z-index: 20; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); }
-        .price-tag { color: var(--primary); font-size: 30px; font-weight: 800; }
-        .items-list { flex: 1; overflow-y: auto; margin: 10px 0; }
-        .product-item { background: #fff; padding: 12px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .btn-print { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 18px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
 
-        /* تصميم الفاتورة للطباعة فقط */
-        #receipt-area { display: none; padding: 10px; font-family: 'Courier New', monospace; width: 80mm; background: white; color: black; direction: rtl; }
-        @media print {
-            body * { visibility: hidden; }
-            #receipt-area, #receipt-area * { visibility: visible; }
-            #receipt-area { position: absolute; left: 0; top: 0; display: block !important; width: 100%; }
-            table { width: 100%; border-top: 1px dashed #000; border-bottom: 1px dashed #000; margin: 10px 0; }
-            th { text-align: right; }
-        }
-    </style>
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="billing_app">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>billing_app</title>
+  <link rel="manifest" href="manifest.json">
 </head>
 <body>
-
-    <div id="interactive" class="viewport"></div>
-    <div class="scan-frame"></div>
-
-    <div class="pos-sheet">
-        <div style="display:flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h2 style="margin:0; font-size: 18px;">فطين POS</h2>
-                <small id="status" style="color:#27ae60;">الماسح جاهز...</small>
-            </div>
-            <div id="totalPrice" class="price-tag">0.00 ج.م</div>
-        </div>
-
-        <div id="cartContent" class="items-list">
-            </div>
-
-        <button class="btn-print" onclick="generateReceipt()">🖨️ طباعة الفاتورة (الوقت تلقائي)</button>
-    </div>
-
-    <div id="receipt-area"></div>
-
-    <script>
-        // تحميل المخزن من الذاكرة المحلية أو البدء بمصفوفة فارغة
-        let productsDB = JSON.parse(localStorage.getItem('fatin_db')) || {
-            "6221007011447": { name: "بسكويت شاي لوتس", price: 10.00 },
-            "6223000181111": { name: "مياه نسله 1.5 لتر", price: 8.50 }
-        };
-
-        let cart = {};
-
-        // بدء الكاميرا
-        Quagga.init({
-            inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#interactive'), constraints: { facingMode: "environment" } },
-            decoder: { readers: ["ean_reader", "code_128_reader", "ean_8_reader"] }
-        }, (err) => { if (!err) Quagga.start(); });
-
-        Quagga.onDetected((result) => {
-            const code = result.codeResult.code;
-            if (code && !window.scanning) {
-                window.scanning = true;
-                handleScan(code);
-                setTimeout(() => { window.scanning = false; }, 2000);
-            }
-        });
-
-        function handleScan(code) {
-            let product = productsDB[code];
-            
-            if (!product) {
-                // طلب الاسم والسعر إذا كان المنتج جديداً
-                beep();
-                const name = prompt(`منتج جديد (${code}). أدخل اسم المنتج:`, "صنف جديد");
-                const price = prompt(`أدخل سعر "${name}":`, "0.00");
-                
-                if (name && price) {
-                    product = { name: name, price: parseFloat(price) };
-                    productsDB[code] = product;
-                    localStorage.setItem('fatin_db', JSON.stringify(productsDB)); // حفظ للأبد
-                } else return;
-            }
-
-            if (cart[code]) cart[code].qty++;
-            else cart[code] = { ...product, qty: 1 };
-            
-            beep();
-            updateUI();
-        }
-
-        function updateUI() {
-            const container = document.getElementById('cartContent');
-            const totalDisplay = document.getElementById('totalPrice');
-            container.innerHTML = '';
-            let total = 0;
-            for (let id in cart) {
-                const item = cart[id];
-                total += item.price * item.qty;
-                container.innerHTML += `
-                    <div class="product-item">
-                        <div><b>${item.name}</b><br><small>${item.price.toFixed(2)} ج.م</small></div>
-                        <div style="text-align:left">x ${item.qty}<br><b>${(item.price * item.qty).toFixed(2)}</b></div>
-                    </div>`;
-            }
-            totalDisplay.innerText = total.toFixed(2) + " ج.م";
-        }
-
-        function generateReceipt() {
-            if (Object.keys(cart).length === 0) return alert("السلة فارغة");
-            
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString('ar-EG');
-            const dateStr = now.toLocaleDateString('ar-EG');
-
-            let html = `
-                <div style="text-align:center">
-                    <h2>فطين POS - أسوان</h2>
-                    <p>التاريخ: ${dateStr} | الوقت: ${timeStr}</p>
-                    <hr>
-                </div>
-                <table style="width:100%">
-                    <tr>
-                        <th>الاسم</th>
-                        <th>السعر</th>
-                        <th>الكمية</th>
-                        <th>الإجمالي</th>
-                    </tr>`;
-            
-            let grandTotal = 0;
-            for (let id in cart) {
-                const item = cart[id];
-                const lineTotal = item.price * item.qty;
-                grandTotal += lineTotal;
-                html += `<tr>
-                    <td>${item.name}</td>
-                    <td>${item.price.toFixed(2)}</td>
-                    <td>${item.qty}</td>
-                    <td>${lineTotal.toFixed(2)}</td>
-                </tr>`;
-            }
-            
-            html += `</table>
-                <div style="text-align:left; margin-top:10px;">
-                    <h3>الإجمالي النهائي: ${grandTotal.toFixed(2)} ج.م</h3>
-                </div>
-                <hr>
-                <p style="text-align:center">شكراً لزيارتكم - تم التصميم بواسطة فطين</p>`;
-
-            const receiptArea = document.getElementById('receipt-area');
-            receiptArea.innerHTML = html;
-            window.print();
-            
-            // تصغير السلة بعد الطباعة
-            if(confirm("هل تريد بدء فاتورة جديدة؟")) {
-                cart = {};
-                updateUI();
-            }
-        }
-
-        function beep() {
-            const context = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = context.createOscillator();
-            osc.connect(context.destination);
-            osc.start(); osc.stop(context.currentTime + 0.1);
-        }
-    </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
