@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>فطين POS - نسخة الطباعة الحرارية</title>
+    <title>فطين POS - نسخة النسخ المتعددة</title>
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -12,11 +12,9 @@
         
         body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
         
-        /* شاشة البداية */
         #setup-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .industry-card { width: 100%; max-width: 250px; padding: 15px; margin: 8px; background: var(--primary); color: white; border-radius: 12px; cursor: pointer; font-weight: bold; border: none; }
 
-        /* الكاميرا */
         #scanner-container { position: absolute; top: 0; width: 100%; height: 30%; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; }
         .scanner-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 200px; height: 100px; border: 2px solid var(--accent); border-radius: 8px; box-shadow: 0 0 0 1000px rgba(0,0,0,0.5); z-index: 10; pointer-events: none; }
@@ -24,7 +22,6 @@
         .side-settings { position: absolute; top: 10px; left: 10px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
         .side-btn { background: rgba(255,255,255,0.8); color: #333; border: none; width: 35px; height: 35px; border-radius: 8px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
 
-        /* الواجهة السفلية */
         .pos-interface { position: absolute; bottom: 0; width: 100%; height: 72%; background: var(--bg); border-radius: 20px 20px 0 0; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 20; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
         .total-box { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 10px 15px; border-radius: 12px; margin-bottom: 10px; }
         .total-price { color: var(--primary); font-size: 1.4rem; font-weight: 800; }
@@ -37,7 +34,6 @@
 
         .btn-print { width: 100%; background: var(--primary); color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 5px; }
 
-        /* بوب اب منتج جديد */
         #product-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; align-items: center; justify-content: center; }
         .modal-content { background: var(--card); padding: 20px; border-radius: 15px; width: 80%; max-width: 300px; }
         .modal-content input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
@@ -45,16 +41,11 @@
 
         #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 50px; font-size: 0.8rem; transition: 0.5s; z-index: 5000; }
 
-        /* --- إعدادات الطباعة الحرارية (80mm / 88mm) --- */
         #receipt { display: none; }
         @media print {
             body * { visibility: hidden; }
             #receipt, #receipt * { visibility: visible; }
-            #receipt { 
-                position: absolute; left: 0; top: 0; display: block !important; 
-                width: 80mm; padding: 2mm; font-family: 'Courier New', Courier, monospace; 
-                background: white; color: black;
-            }
+            #receipt { position: absolute; left: 0; top: 0; display: block !important; width: 80mm; background: white; color: black; }
             @page { size: 80mm auto; margin: 0; }
         }
     </style>
@@ -95,7 +86,7 @@
             <div class="total-price"><span id="total-val">0.00</span> <small style="font-size: 0.8rem;">ج.م</small></div>
         </div>
         <div id="cart" class="cart-items"></div>
-        <button class="btn-print" onclick="printInvoice()">🖨️ طباعة الفاتورة</button>
+        <button class="btn-print" onclick="askPrintCount()">🖨️ طباعة الفاتورة</button>
     </div>
 
     <div id="receipt"></div>
@@ -201,23 +192,30 @@
 
         function changeQty(id, d) { cart[id].qty += d; if(cart[id].qty <= 0) delete cart[id]; updateUI(); }
 
-        function printInvoice() {
+        // الوظيفة الجديدة لطلب عدد النسخ
+        function askPrintCount() {
             if (Object.keys(cart).length === 0) return;
+            let count = prompt("كم عدد النسخ المطلوب طباعتها؟", "1");
+            if (count && !isNaN(count) && count > 0) {
+                printInvoice(parseInt(count));
+            }
+        }
+
+        function printInvoice(copies) {
             const store = localStorage.getItem('store_name') || "متجر فطين";
             let total = 0;
             let rows = "";
             for (let id in cart) {
-                let i = cart[id]; 
-                let sub = i.price * i.qty;
-                total += sub;
+                let i = cart[id]; total += i.price * i.qty;
                 rows += `<div style="display:flex; justify-content:space-between; font-size: 12px; margin-bottom: 2px;">
                             <span>${i.name} x${i.qty}</span>
-                            <span>${sub.toFixed(2)}</span>
+                            <span>${(i.price * i.qty).toFixed(2)}</span>
                          </div>`;
             }
 
-            let html = `
-                <div style="width: 100%; text-align:center; padding: 5px;">
+            // تكرار محتوى الفاتورة بناءً على عدد النسخ
+            let singleReceipt = `
+                <div style="width: 100%; text-align:center; padding: 5px; box-sizing: border-box; page-break-after: always;">
                     <h3 style="margin:0 0 5px 0; font-size: 16px;">${store}</h3>
                     <p style="font-size: 10px; margin:0;">${new Date().toLocaleString('ar-EG')}</p>
                     <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
@@ -229,13 +227,20 @@
                     </div>
                     <div style="border-top: 1px dashed black; margin: 8px 0;"></div>
                     <p style="font-size: 10px;">شكراً لزيارتكم - سيستم فطين</p>
-                    <div style="height: 30px;"></div> </div>`;
+                    <div style="height: 40px;"></div> </div>`;
+
+            let finalHtml = "";
+            for(let k=0; k < copies; k++) {
+                finalHtml += singleReceipt;
+                // إضافة خط وهمي للقص بين النسخ لو كانت في نفس الورقة
+                if(k < copies - 1) finalHtml += `<div style="border-top: 2px dotted #ccc; margin-bottom: 20px;"></div>`;
+            }
             
-            document.getElementById('receipt').innerHTML = html;
+            document.getElementById('receipt').innerHTML = finalHtml;
             window.print();
             cart = {}; updateUI();
-            showToast("🧾 تمت الطباعة");
+            showToast(`🧾 تم طباعة ${copies} نسخة`);
         }
     </script>
 </body>
-</html>س
+</html>
