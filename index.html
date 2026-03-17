@@ -3,181 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فطين POS - الماسح الذكي</title>
+    <title>فطين POS - نظام أسوان المتكامل</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; }
 
-        /* منطقة الكاميرا (الخلفية) */
+        /* Camera Background Simulation */
         .camera-view {
-            position: relative;
-            height: 60%; /* الجزء العلوي للكاميرا */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: url('https://via.placeholder.com/800x600?text=Camera+Feed') no-repeat center center;
-            background-size: cover;
+            position: relative; height: 55%;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000');
+            background-size: cover; display: flex; justify-content: center; align-items: center;
         }
 
-        /* مربع تحديد الباركود */
-        .scanner-overlay {
-            width: 200px;
-            height: 200px;
-            border: 2px solid rgba(121, 255, 121, 0.8);
-            border-radius: 10px;
-            position: relative;
-            box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.3);
+        .scanner-frame {
+            width: 220px; height: 220px; border: 3px solid #00ff00; border-radius: 15px;
+            box-shadow: 0 0 20px #00ff00; position: relative;
         }
 
-        /* أيقونات التحكم الجانبية */
-        .side-controls {
-            position: absolute;
-            right: 20px;
-            top: 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .icon-btn {
-            background: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        /* البطاقة السفلية (Scanned Items) */
+        /* Bottom UI */
         .bottom-sheet {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 45%;
-            background: #f8f9ff;
-            border-top-left-radius: 30px;
-            border-top-right-radius: 30px;
-            padding: 25px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.2);
+            position: absolute; bottom: 0; width: 100%; height: 45%;
+            background: #ffffff; border-top-left-radius: 30px; border-top-right-radius: 30px;
+            padding: 20px; display: flex; flex-direction: column; box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
         }
 
-        .sheet-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-        }
+        .header-box { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .total-price { color: #1a237e; font-size: 28px; font-weight: bold; }
 
-        .total-label { color: #888; font-size: 14px; }
-        .total-price { color: #1a237e; font-size: 24px; font-weight: bold; }
-
-        .scanned-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 20px;
-        }
-
+        .items-container { flex: 1; overflow-y: auto; padding-bottom: 10px; }
         .item-card {
-            background: white;
-            padding: 15px;
-            border-radius: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            background: #f8f9fa; padding: 12px 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
         }
 
-        .item-info h4 { margin: 0; font-size: 16px; color: #333; }
-        .item-info span { color: #666; font-size: 14px; }
+        .qty-controls { display: flex; align-items: center; gap: 15px; background: #eef1f4; padding: 5px 15px; border-radius: 10px; }
+        .qty-btn { border: none; background: none; font-size: 20px; color: #1a237e; cursor: pointer; font-weight: bold; }
 
-        .quantity-control {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: #f0f2f5;
-            padding: 5px 12px;
-            border-radius: 10px;
+        .action-bar { display: flex; gap: 10px; }
+        .btn-main {
+            flex: 2; background: #1a237e; color: white; border: none; padding: 15px;
+            border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
-        .qty-btn { border: none; background: none; font-size: 18px; color: #1a237e; cursor: pointer; }
+        .btn-secondary {
+            flex: 1; background: #eef1f4; color: #1a237e; border: none; padding: 15px;
+            border-radius: 15px; font-size: 14px; cursor: pointer;
+        }
 
-        /* زر المراجعة الكبير */
-        .review-btn {
-            background: #2a36b1;
-            color: white;
-            border: none;
-            padding: 18px;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            width: 100%;
-            cursor: pointer;
+        /* Input for manual barcode */
+        .manual-input {
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            width: 80%; padding: 10px; border-radius: 20px; border: none; text-align: center; font-size: 16px;
         }
     </style>
 </head>
 <body>
 
     <div class="camera-view">
-        <div class="scanner-overlay"></div>
-        
-        <div class="side-controls">
-            <button class="icon-btn">⚙️</button>
-            <button class="icon-btn">🔦</button>
-            <button class="icon-btn">📹</button>
-        </div>
+        <input type="text" id="barcodeInput" class="manual-input" placeholder="ادخل الباركود يدويًا واضغط Enter">
+        <div class="scanner-frame"></div>
     </div>
 
     <div class="bottom-sheet">
-        <div class="sheet-header">
+        <div class="header-box">
             <div>
-                <h2 style="margin:0; font-size: 20px;">الأصناف الممسوحة</h2>
-                <span style="color:#888;">إجمالي 2 صنف</span>
+                <h2 style="margin:0; font-size: 22px;">قائمة المشتريات</h2>
+                <span id="itemCount" style="color:#666;">إجمالي 0 أصناف</span>
             </div>
             <div style="text-align: left;">
-                <span class="total-label">السعر الإجمالي</span><br>
-                <span class="total-price">15.00 ج.م</span>
+                <span style="color:#888; font-size: 14px;">الإجمالي المشتمل (14% ضريبة)</span><br>
+                <span id="finalTotal" class="total-price">0.00 ج.م</span>
             </div>
         </div>
 
-        <div class="scanned-list">
-            <div class="item-card">
-                <div class="item-info">
-                    <h4>بسكويت 50-50</h4>
-                    <span>5.00 ج.م</span>
-                </div>
-                <div class="quantity-control">
-                    <button class="qty-btn">−</button>
-                    <span>1</span>
-                    <button class="qty-btn">+</button>
-                </div>
+        <div id="itemsList" class="items-container">
             </div>
 
-            <div class="item-card">
-                <div class="item-info">
-                    <h4>بوربون (Bourbon)</h4>
-                    <span>10.00 ج.م</span>
-                </div>
-                <div class="quantity-control">
-                    <button class="qty-btn">−</button>
-                    <span>1</span>
-                    <button class="qty-btn">+</button>
-                </div>
-            </div>
+        <div class="action-bar">
+            <button class="btn-secondary" onclick="window.location.reload()">🔄 جديد</button>
+            <button class="btn-main" onclick="printReceipt()">✅ إنهاء وطلب الفاتورة</button>
         </div>
-
-        <button class="review-btn">
-            📋 مراجعة الطلب
-        </button>
     </div>
 
+    <script>
+        // قاعدة بيانات وهمية (يتم استبدالها لاحقاً بالمخزن الحقيقي)
+        const productsDB = {
+            "123": { name: "بسكويت 50-50", price: 5.00 },
+            "456": { name: "بوربون شيكولاتة", price: 10.00 },
+            "789": { name: "مياه معدنية 1.5ل", price: 8.00 }
+        };
+
+        let cart = [];
+
+        const barcodeInput = document.getElementById('barcodeInput');
+        const itemsList = document.getElementById('itemsList');
+        const finalTotalDisplay = document.getElementById('finalTotal');
+        const itemCountDisplay = document.getElementById('itemCount');
+
+        // استماع لإدخال الباركود
+        barcodeInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                const code = this.value;
+                addToCart(code);
+                this.value = ''; // مسح الحقل بعد الإضافة
+            }
+        });
+
+        function addToCart(code) {
+            const product = productsDB[code];
+            if (product) {
+                const existing = cart.find(item => item.code === code);
+                if (existing) {
+                    existing.qty++;
+                } else {
+                    cart.push({ ...product, code: code, qty: 1 });
+                }
+                renderCart();
+            } else {
+                alert("المنتج غير موجود في المخزن!");
+            }
+        }
+
+        function updateQty(code, delta) {
+            const item = cart.find(i => i.code === code);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    cart = cart.filter(i => i.code !== code);
+                }
+                renderCart();
+            }
+        }
+
+        function renderCart() {
+            itemsList.innerHTML = '';
+            let total = 0;
+            let count = 0;
+
+            cart.forEach(item => {
+                total += item.price * item.qty;
+                count += item.qty;
+                itemsList.innerHTML += `
+                    <div class="item-card">
+                        <div>
+                            <h4 style="margin:0;">${item.name}</h4>
+                            <span style="color:#27ae60; font-weight:bold;">${(item.price * item.qty).toFixed(2)} ج.م</span>
+                        </div>
+                        <div class="qty-controls">
+                            <button class="qty-btn" onclick="updateQty('${item.code}', -1)">−</button>
+                            <span>${item.qty}</span>
+                            <button class="qty-btn" onclick="updateQty('${item.code}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            itemCountDisplay.innerText = `إجمالي ${count} أصناف`;
+            finalTotalDisplay.innerText = `${total.toFixed(2)} ج.م`;
+        }
+
+        function printReceipt() {
+            if (cart.length === 0) return alert("السلة فارغة!");
+            alert("جاري تجهيز الفاتورة للطباعة عبر Bluetooth...");
+            window.print(); // محاكاة أمر الطباعة
+        }
+    </script>
 </body>
 </html>
