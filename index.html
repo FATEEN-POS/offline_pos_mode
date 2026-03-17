@@ -3,45 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>فطين POS - برو</title>
+    <title>فطين POS - الإصدار الاحترافي المطور</title>
     <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
-            --primary: #2a36b1; --bg: #f8f9ff; --card: #ffffff; --text: #333; --accent: #00ff00;
+            --primary: #2a36b1; --bg: #f0f2f5; --card: #ffffff; --text: #1a1a1a; --accent: #4caf50;
         }
         [data-theme="dark"] {
-            --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --primary: #5c6bc0;
+            --bg: #121212; --card: #1e1e1e; --text: #f5f5f5; --primary: #7986cb;
         }
         
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
+        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; transition: 0.3s; }
         
-        /* شاشة البداية */
-        #setup-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
-        .industry-card { width: 100%; max-width: 300px; padding: 20px; margin: 10px; background: var(--card); border: 2px solid #eee; border-radius: 20px; cursor: pointer; color: var(--text); }
+        #setup-screen { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .industry-card { width: 100%; max-width: 300px; padding: 25px; margin: 10px; background: var(--primary); color: white; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 1.2rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
 
-        /* منطقة الكاميرا والتحكم */
-        #scanner-container { position: absolute; top: 0; width: 100%; height: 40%; background: #000; overflow: hidden; }
+        #scanner-container { position: absolute; top: 0; width: 100%; height: 35%; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; }
-        .controls { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; z-index: 50; }
-        .icon-btn { background: rgba(0,0,0,0.5); color: #fff; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(5px); }
-
-        /* واجهة السلة */
-        .pos-interface { position: absolute; bottom: 0; width: 100%; height: 62%; background: var(--bg); border-radius: 30px 30px 0 0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 20; box-shadow: 0 -10px 20px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        .store-name { font-size: 0.9rem; color: var(--primary); font-weight: bold; cursor: pointer; }
-        .total-price { color: var(--primary); font-size: 2rem; font-weight: 900; }
         
-        .cart-items { flex: 1; overflow-y: auto; padding-bottom: 10px; }
-        .item { background: var(--card); padding: 15px; border-radius: 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .top-bar { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 100; }
+        .control-btn { background: rgba(255,255,255,0.9); color: #333; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+
+        .pos-interface { position: absolute; bottom: 0; width: 100%; height: 67%; background: var(--bg); border-radius: 25px 25px 0 0; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 20; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); }
+        .total-box { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; }
+        .total-price { color: var(--primary); font-size: 1.8rem; font-weight: 900; }
         
-        .btn-print { width: 100%; background: var(--primary); color: #fff; border: none; padding: 20px; border-radius: 20px; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 8px 15px rgba(42, 54, 177, 0.3); }
+        .cart-items { flex: 1; overflow-y: auto; padding: 5px; }
+        .item { background: var(--card); padding: 15px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.05); animation: slideIn 0.3s ease; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* نوتفكيشن */
-        #notification { position: fixed; top: -100px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 25px; border-radius: 50px; z-index: 2000; transition: 0.5s; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .btn-print { width: 100%; background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 15px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
 
-        /* طباعة */
-        #receipt { display: none; padding: 10px; width: 80mm; background: #fff; color: #000; }
+        #product-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 20px; width: 85%; max-width: 350px; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; }
+        .modal-btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; }
+
+        #toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 12px 25px; border-radius: 50px; transition: 0.5s; z-index: 5000; }
+
+        #receipt { display: none; }
         @media print {
             body * { visibility: hidden; }
             #receipt, #receipt * { visibility: visible; }
@@ -51,34 +52,43 @@
 </head>
 <body>
 
-    <div id="notification">سيستم شركة فطين الاحترافي 🚀</div>
+    <div id="toast"></div>
+
+    <div id="product-modal">
+        <div class="modal-content">
+            <h3 style="margin:0; text-align:center;">منتج جديد 🛍️</h3>
+            <input type="text" id="new-name" placeholder="اسم المنتج">
+            <input type="number" id="new-price" placeholder="السعر">
+            <button class="modal-btn" onclick="saveNewProduct()">إضافة للسلة وحفظ</button>
+        </div>
+    </div>
 
     <div id="setup-screen">
-        <h1 style="color:var(--primary)">فطين POS برو</h1>
-        <p>اختر نشاطك لبدء العمل أوفلاين</p>
-        <div class="industry-card" onclick="initSystem('supermarket')"><i class="fas fa-shopping-basket"></i> سوبر ماركت</div>
-        <div class="industry-card" onclick="initSystem('pharmacy')"><i class="fas fa-pills"></i> صيدلية</div>
+        <h2 style="color:var(--primary)">فطين POS</h2>
+        <button class="industry-card" onclick="initSystem('supermarket')">🛒 سوبر ماركت</button>
+        <button class="industry-card" onclick="initSystem('pharmacy')">💊 صيدلية</button>
     </div>
 
     <div id="scanner-container">
-        <div class="controls">
-            <button class="icon-btn" onclick="toggleTheme()"><i id="theme-icon" class="fas fa-moon"></i></button>
-            <button class="icon-btn" onclick="toggleFlash()"><i class="fas fa-bolt"></i></button>
-            <button class="icon-btn" onclick="setStoreName()"><i class="fas fa-store"></i></button>
+        <div class="top-bar">
+            <button class="control-btn" onclick="toggleFlash()">🔦 كشاف</button>
+            <button class="control-btn" onclick="toggleTheme()">🌓 ثيم</button>
+            <button class="control-btn" onclick="setStoreName()">🏢 اسم المحل</button>
         </div>
-        <div style="position: absolute; top: 25%; left: 50%; transform: translateX(-50%); width: 250px; height: 150px; border: 2px solid var(--accent); border-radius: 15px; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); pointer-events: none;"></div>
     </div>
 
     <div class="pos-interface">
-        <div class="header">
+        <div class="total-box">
             <div>
-                <div class="store-name" id="display-store-name" onclick="setStoreName()">اسم المتجر: <span id="s-name">فطين POS</span> ✏️</div>
-                <small id="status" style="color: var(--accent);">الماسح نشط ✅</small>
+                <div id="s-name-display" style="font-size: 0.8rem; opacity: 0.7;">متجر فطين</div>
+                <div style="font-weight: bold;">الإجمالي</div>
             </div>
-            <div id="total-val" class="total-price">0.00</div>
+            <div class="total-price"><span id="total-val">0.00</span> <small>ج.م</small></div>
         </div>
 
-        <div id="cart" class="cart-items"></div>
+        <div id="cart" class="cart-items">
+            <p id="empty-msg" style="text-align:center; opacity:0.5; margin-top:50px;">السلة فارغة.. ابدأ المسح</p>
+        </div>
 
         <button class="btn-print" onclick="printInvoice()">🖨️ طباعة الفاتورة</button>
     </div>
@@ -86,133 +96,176 @@
     <div id="receipt"></div>
 
     <script>
-        const industryDatabases = {
-            supermarket: { "6221007011447": { name: "لوتس", price: 10.00 }, "6223000181111": { name: "مياه", price: 8.50 }, "6221031261115": { name: "لبن جهينة", price: 45.00 } },
-            pharmacy: { "0000001": { name: "بندول", price: 35.00 } }
-        };
+        let currentDB = {}, cart = {}, currentScanCode = "", flashOn = false;
 
-        let currentDB = {}, cart = {}, flashOn = false;
-
-        // عند الفتح
         window.onload = () => {
-            showNotify("أهلاً بك في سيستم شركة فطين الاحترافي");
             if(localStorage.getItem('fatin_setup') === 'done') {
-                currentDB = JSON.parse(localStorage.getItem('fatin_db'));
+                currentDB = JSON.parse(localStorage.getItem('fatin_db')) || {};
                 document.getElementById('setup-screen').style.display = 'none';
-                document.getElementById('s-name').innerText = localStorage.getItem('store_name') || "فطين POS";
+                document.getElementById('s-name-display').innerText = localStorage.getItem('store_name') || "متجر فطين";
                 startScanner();
             }
-            if(localStorage.getItem('theme') === 'dark') toggleTheme(true);
+            if(localStorage.getItem('theme') === 'dark') document.body.setAttribute('data-theme', 'dark');
+            showToast("🚀 نظام فطين POS جاهز");
         };
 
-        function showNotify(msg) {
-            const n = document.getElementById('notification');
-            n.innerText = msg; n.style.top = "20px";
-            setTimeout(() => { n.style.top = "-100px"; }, 3000);
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.bottom = "30px";
+            setTimeout(() => t.style.bottom = "-100px", 3000);
         }
 
-        function toggleTheme(init = false) {
-            const body = document.body;
-            const icon = document.getElementById('theme-icon');
-            if(!init) {
-                body.getAttribute('data-theme') === 'dark' ? body.removeAttribute('data-theme') : body.setAttribute('data-theme', 'dark');
-            } else { body.setAttribute('data-theme', 'dark'); }
-            
-            const isDark = body.getAttribute('data-theme') === 'dark';
-            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        }
-
-        function setStoreName() {
-            const name = prompt("ادخل اسم المحل الذي سيظهر في الفاتورة:", localStorage.getItem('store_name') || "فطين POS");
-            if(name) {
-                localStorage.setItem('store_name', name);
-                document.getElementById('s-name').innerText = name;
-            }
+        function toggleTheme() {
+            const isDark = document.body.hasAttribute('data-theme');
+            isDark ? document.body.removeAttribute('data-theme') : document.body.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
         }
 
         async function toggleFlash() {
             const track = Quagga.CameraAccess.getActiveTrack();
-            if (track && typeof track.getCapabilities === 'function') {
+            if (track && track.getCapabilities().torch) {
                 flashOn = !flashOn;
                 await track.applyConstraints({ advanced: [{ torch: flashOn }] });
-            } else { alert("الفلاش غير مدعوم على هذا المتصفح"); }
+                showToast(flashOn ? "🔦 الكشاف يعمل" : "🔦 الكشاف مطفأ");
+            } else { showToast("⚠️ الفلاش غير متاح"); }
+        }
+
+        function setStoreName() {
+            const n = prompt("ادخل اسم محلك:");
+            if(n) {
+                localStorage.setItem('store_name', n);
+                document.getElementById('s-name-display').innerText = n;
+            }
         }
 
         function initSystem(type) {
             localStorage.setItem('fatin_setup', 'done');
-            currentDB = industryDatabases[type];
-            localStorage.setItem('fatin_db', JSON.stringify(currentDB));
-            document.getElementById('setup-screen').style.display = 'none';
-            startScanner();
+            // أصناف تجريبية
+            const initialData = (type === 'supermarket') ? 
+                {"6221007011447":{name:"لوتس", price:10}, "6223000181111":{name:"مياه نسله", price:8.5}} : 
+                {"0000001":{name:"بندول", price:35}};
+            localStorage.setItem('fatin_db', JSON.stringify(initialData));
+            location.reload();
         }
 
         function startScanner() {
             Quagga.init({
                 inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#scanner-container'), constraints: { facingMode: "environment" } },
-                decoder: { readers: ["ean_reader", "code_128_reader"] }
+                decoder: { readers: ["ean_reader", "code_128_reader", "ean_8_reader"] }
             }, (err) => { if (!err) Quagga.start(); });
 
             Quagga.onDetected((res) => {
-                if (!window.isScanning) {
-                    window.isScanning = true;
-                    handleScan(res.codeResult.code);
-                    setTimeout(() => window.isScanning = false, 2000);
+                const code = res.codeResult.code;
+                if (!window.busy && code) {
+                    window.busy = true;
+                    handleScan(code);
+                    setTimeout(() => window.busy = false, 2000);
                 }
             });
         }
 
         function handleScan(code) {
-            let p = currentDB[code];
-            if (!p) {
-                const name = prompt("صنف جديد! الاسم:");
-                const price = prompt("السعر:");
-                if (name && price) {
-                    p = { name, price: parseFloat(price) };
-                    currentDB[code] = p;
-                    localStorage.setItem('fatin_db', JSON.stringify(currentDB));
-                } else return;
+            currentScanCode = code;
+            if (currentDB[code]) {
+                addToCart(code);
+                showToast("✅ تم إضافة: " + currentDB[code].name);
+            } else {
+                document.getElementById('product-modal').style.display = 'flex';
+                document.getElementById('new-name').focus();
             }
-            if (cart[code]) cart[code].qty++; else cart[code] = { ...p, qty: 1 };
-            new AudioContext().createOscillator().connect(new AudioContext().destination); // Beep محاكي
+        }
+
+        function saveNewProduct() {
+            const name = document.getElementById('new-name').value;
+            const price = document.getElementById('new-price').value;
+            if (name && price) {
+                currentDB[currentScanCode] = { name, price: parseFloat(price) };
+                localStorage.setItem('fatin_db', JSON.stringify(currentDB));
+                addToCart(currentScanCode);
+                document.getElementById('product-modal').style.display = 'none';
+                document.getElementById('new-name').value = "";
+                document.getElementById('new-price').value = "";
+                showToast("💾 تم الحفظ والإضافة");
+            }
+        }
+
+        function addToCart(code) {
+            if (cart[code]) {
+                cart[code].qty++; 
+            } else {
+                cart[code] = { ...currentDB[code], qty: 1 };
+            }
             updateUI();
         }
 
         function updateUI() {
             const container = document.getElementById('cart');
+            const emptyMsg = document.getElementById('empty-msg');
+            
+            // مسح القائمة القديمة لإعادة بنائها
             container.innerHTML = '';
             let total = 0;
-            for (let id in cart) {
-                let item = cart[id];
-                total += item.price * item.qty;
-                container.innerHTML += `<div class="item">
-                    <div><b>${item.name}</b><br><small>${item.price} ج.م</small></div>
-                    <div style="display:flex; gap:15px; align-items:center;">
-                        <button onclick="changeQty('${id}',-1)" style="border:none; background:#eee; border-radius:50%; width:30px; height:30px;">-</button>
-                        <b>${item.qty}</b>
-                        <button onclick="changeQty('${id}',1)" style="border:none; background:#eee; border-radius:50%; width:30px; height:30px;">+</button>
-                    </div>
-                </div>`;
+            const itemsArray = Object.keys(cart);
+
+            if (itemsArray.length === 0) {
+                container.innerHTML = '<p id="empty-msg" style="text-align:center; opacity:0.5; margin-top:50px;">السلة فارغة.. ابدأ المسح</p>';
+            } else {
+                itemsArray.forEach(id => {
+                    let i = cart[id];
+                    total += i.price * i.qty;
+                    container.innerHTML += `
+                        <div class="item">
+                            <div><b>${i.name}</b><br><small>${i.price} ج.م</small></div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <button onclick="changeQty('${id}',-1)" style="border:none; padding:8px 12px; border-radius:8px; background:#eee;">-</button>
+                                <b>${i.qty}</b>
+                                <button onclick="changeQty('${id}',1)" style="border:none; padding:8px 12px; border-radius:8px; background:#eee;">+</button>
+                            </div>
+                        </div>`;
+                });
             }
             document.getElementById('total-val').innerText = total.toFixed(2);
         }
 
-        function changeQty(id, d) { cart[id].qty += d; if(cart[id].qty<=0) delete cart[id]; updateUI(); }
+        function changeQty(id, d) {
+            cart[id].qty += d;
+            if(cart[id].qty <= 0) delete cart[id];
+            updateUI();
+        }
 
         function printInvoice() {
-            if (Object.keys(cart).length === 0) return;
-            const name = localStorage.getItem('store_name') || "فطين POS";
-            let html = `<div style="text-align:center"><h2>${name}</h2><p>${new Date().toLocaleString('ar-EG')}</p><hr>`;
+            if (Object.keys(cart).length === 0) {
+                showToast("⚠️ السلة فارغة!");
+                return;
+            }
+            const store = localStorage.getItem('store_name') || "متجر فطين";
+            let html = `<div style="text-align:center; direction:rtl; font-family:sans-serif; padding:20px;">
+                <h2 style="margin-bottom:5px;">${store}</h2>
+                <p style="font-size:12px;">${new Date().toLocaleString('ar-EG')}</p>
+                <hr style="border-top: 1px dashed #000;">`;
+            
             let total = 0;
             for (let id in cart) {
-                let i = cart[id]; total += i.price * i.qty;
-                html += `<div style="display:flex; justify-content:space-between"><span>${i.name} x${i.qty}</span><span>${(i.price*i.qty).toFixed(2)}</span></div>`;
+                let i = cart[id];
+                total += i.price * i.qty;
+                html += `<div style="display:flex; justify-content:space-between; margin:5px 0;">
+                    <span>${i.name} (${i.qty})</span>
+                    <span>${(i.price * i.qty).toFixed(2)}</span>
+                </div>`;
             }
-            html += `<hr><h3>الإجمالي: ${total.toFixed(2)} ج.م</h3><p>شكراً لثقتكم - سيستم فطين</p></div>`;
+            
+            html += `<hr style="border-top: 1px dashed #000;">
+                <h3 style="display:flex; justify-content:space-between;"><span>الإجمالي:</span> <span>${total.toFixed(2)} ج.م</span></h3>
+                <p style="margin-top:20px; font-size:12px;">شكراً لتعاملكم مع سيستم فطين</p>
+            </div>`;
+            
             document.getElementById('receipt').innerHTML = html;
             window.print();
-            showNotify("تم إصدار الفاتورة بنجاح - شركة فطين");
-            cart = {}; updateUI();
+            showToast("🧾 تم إصدار الفاتورة بنجاح");
+            
+            // تفريغ السلة لبدء عملية جديدة
+            cart = {};
+            updateUI();
         }
     </script>
 </body>
