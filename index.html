@@ -1,171 +1,85 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>فطين POS - نظام أسوان المتكامل</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #000; }
+<script>
+    // جلب البيانات من المخزن الحقيقي (LocalStorage)
+    let inventory = JSON.parse(localStorage.getItem('fatin_inventory')) || {};
+    let cart = [];
 
-        /* Camera Background Simulation */
-        .camera-view {
-            position: relative; height: 55%;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=1000');
-            background-size: cover; display: flex; justify-content: center; align-items: center;
+    const barcodeInput = document.getElementById('barcodeInput');
+    const itemsList = document.getElementById('itemsList');
+    const finalTotalDisplay = document.getElementById('finalTotal');
+    const itemCountDisplay = document.getElementById('itemCount');
+
+    barcodeInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            const code = this.value;
+            addToCart(code);
+            this.value = '';
         }
+    });
 
-        .scanner-frame {
-            width: 220px; height: 220px; border: 3px solid #00ff00; border-radius: 15px;
-            box-shadow: 0 0 20px #00ff00; position: relative;
-        }
-
-        /* Bottom UI */
-        .bottom-sheet {
-            position: absolute; bottom: 0; width: 100%; height: 45%;
-            background: #ffffff; border-top-left-radius: 30px; border-top-right-radius: 30px;
-            padding: 20px; display: flex; flex-direction: column; box-shadow: 0 -10px 30px rgba(0,0,0,0.3);
-        }
-
-        .header-box { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
-        .total-price { color: #1a237e; font-size: 28px; font-weight: bold; }
-
-        .items-container { flex: 1; overflow-y: auto; padding-bottom: 10px; }
-        .item-card {
-            background: #f8f9fa; padding: 12px 15px; border-radius: 15px;
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-        }
-
-        .qty-controls { display: flex; align-items: center; gap: 15px; background: #eef1f4; padding: 5px 15px; border-radius: 10px; }
-        .qty-btn { border: none; background: none; font-size: 20px; color: #1a237e; cursor: pointer; font-weight: bold; }
-
-        .action-bar { display: flex; gap: 10px; }
-        .btn-main {
-            flex: 2; background: #1a237e; color: white; border: none; padding: 15px;
-            border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
-        }
-        .btn-secondary {
-            flex: 1; background: #eef1f4; color: #1a237e; border: none; padding: 15px;
-            border-radius: 15px; font-size: 14px; cursor: pointer;
-        }
-
-        /* Input for manual barcode */
-        .manual-input {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            width: 80%; padding: 10px; border-radius: 20px; border: none; text-align: center; font-size: 16px;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="camera-view">
-        <input type="text" id="barcodeInput" class="manual-input" placeholder="ادخل الباركود يدويًا واضغط Enter">
-        <div class="scanner-frame"></div>
-    </div>
-
-    <div class="bottom-sheet">
-        <div class="header-box">
-            <div>
-                <h2 style="margin:0; font-size: 22px;">قائمة المشتريات</h2>
-                <span id="itemCount" style="color:#666;">إجمالي 0 أصناف</span>
-            </div>
-            <div style="text-align: left;">
-                <span style="color:#888; font-size: 14px;">الإجمالي المشتمل (14% ضريبة)</span><br>
-                <span id="finalTotal" class="total-price">0.00 ج.م</span>
-            </div>
-        </div>
-
-        <div id="itemsList" class="items-container">
-            </div>
-
-        <div class="action-bar">
-            <button class="btn-secondary" onclick="window.location.reload()">🔄 جديد</button>
-            <button class="btn-main" onclick="printReceipt()">✅ إنهاء وطلب الفاتورة</button>
-        </div>
-    </div>
-
-    <script>
-        // قاعدة بيانات وهمية (يتم استبدالها لاحقاً بالمخزن الحقيقي)
-        const productsDB = {
-            "123": { name: "بسكويت 50-50", price: 5.00 },
-            "456": { name: "بوربون شيكولاتة", price: 10.00 },
-            "789": { name: "مياه معدنية 1.5ل", price: 8.00 }
-        };
-
-        let cart = [];
-
-        const barcodeInput = document.getElementById('barcodeInput');
-        const itemsList = document.getElementById('itemsList');
-        const finalTotalDisplay = document.getElementById('finalTotal');
-        const itemCountDisplay = document.getElementById('itemCount');
-
-        // استماع لإدخال الباركود
-        barcodeInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                const code = this.value;
-                addToCart(code);
-                this.value = ''; // مسح الحقل بعد الإضافة
+    function addToCart(code) {
+        // البحث في المخزن اللي سجلناه في الصفحة التانية
+        const product = inventory[code]; 
+        
+        if (product) {
+            const existing = cart.find(item => item.barcode === code);
+            if (existing) {
+                existing.qty++;
+            } else {
+                cart.push({ ...product, qty: 1 });
             }
+            renderCart();
+        } else {
+            alert("هذا الباركود غير مسجل في المخزن! اذهب لصفحة المخزن أولاً.");
+        }
+    }
+
+    function updateQty(barcode, delta) {
+        const item = cart.find(i => i.barcode === barcode);
+        if (item) {
+            item.qty += delta;
+            if (item.qty <= 0) cart = cart.filter(i => i.barcode !== barcode);
+            renderCart();
+        }
+    }
+
+    function renderCart() {
+        itemsList.innerHTML = '';
+        let total = 0;
+        let count = 0;
+
+        cart.forEach(item => {
+            total += item.price * item.qty;
+            count += item.qty;
+            itemsList.innerHTML += `
+                <div class="item-card">
+                    <div>
+                        <h4 style="margin:0;">${item.name}</h4>
+                        <span style="color:#1a237e; font-weight:bold;">${(item.price * item.qty).toFixed(2)} ج.م</span>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="updateQty('${item.barcode}', -1)">−</button>
+                        <span>${item.qty}</span>
+                        <button class="qty-btn" onclick="updateQty('${item.barcode}', 1)">+</button>
+                    </div>
+                </div>`;
         });
 
-        function addToCart(code) {
-            const product = productsDB[code];
-            if (product) {
-                const existing = cart.find(item => item.code === code);
-                if (existing) {
-                    existing.qty++;
-                } else {
-                    cart.push({ ...product, code: code, qty: 1 });
-                }
-                renderCart();
-            } else {
-                alert("المنتج غير موجود في المخزن!");
-            }
-        }
+        itemCountDisplay.innerText = `إجمالي ${count} أصناف`;
+        finalTotalDisplay.innerText = `${total.toFixed(2)} ج.م`;
+    }
 
-        function updateQty(code, delta) {
-            const item = cart.find(i => i.code === code);
-            if (item) {
-                item.qty += delta;
-                if (item.qty <= 0) {
-                    cart = cart.filter(i => i.code !== code);
-                }
-                renderCart();
-            }
-        }
+    function printReceipt() {
+        if (cart.length === 0) return alert("السلة فارغة!");
+        // هنا نقوم بتسجيل المبيعات للتقارير قبل الطباعة
+        saveToReports(cart, parseFloat(finalTotalDisplay.innerText));
+        window.print();
+        cart = [];
+        renderCart();
+    }
 
-        function renderCart() {
-            itemsList.innerHTML = '';
-            let total = 0;
-            let count = 0;
-
-            cart.forEach(item => {
-                total += item.price * item.qty;
-                count += item.qty;
-                itemsList.innerHTML += `
-                    <div class="item-card">
-                        <div>
-                            <h4 style="margin:0;">${item.name}</h4>
-                            <span style="color:#27ae60; font-weight:bold;">${(item.price * item.qty).toFixed(2)} ج.م</span>
-                        </div>
-                        <div class="qty-controls">
-                            <button class="qty-btn" onclick="updateQty('${item.code}', -1)">−</button>
-                            <span>${item.qty}</span>
-                            <button class="qty-btn" onclick="updateQty('${item.code}', 1)">+</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            itemCountDisplay.innerText = `إجمالي ${count} أصناف`;
-            finalTotalDisplay.innerText = `${total.toFixed(2)} ج.م`;
-        }
-
-        function printReceipt() {
-            if (cart.length === 0) return alert("السلة فارغة!");
-            alert("جاري تجهيز الفاتورة للطباعة عبر Bluetooth...");
-            window.print(); // محاكاة أمر الطباعة
-        }
-    </script>
-</body>
-</html>
+    function saveToReports(currentCart, total) {
+        let reports = JSON.parse(localStorage.getItem('fatin_reports')) || [];
+        reports.push({ date: new Date().toLocaleString(), items: currentCart, total: total });
+        localStorage.setItem('fatin_reports', JSON.stringify(reports));
+    }
+</script>
